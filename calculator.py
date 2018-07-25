@@ -47,11 +47,41 @@ def add(*args):
 
     # TODO: Fill sum with the correct value, based on the
     # args provided.
-    sum = "0"
+    sum = args[0]+args[1]
 
-    return sum
+    return str(sum)
 
 # TODO: Add functions for handling more arithmetic operations.
+
+def subtract(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    sum = args[0]-args[1]
+
+    return str(sum)
+
+
+def divide(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    quotient = args[0]/args[1]
+
+    return str(quotient)
+
+
+def multiply(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    product = args[0]*args[1]
+
+    return str(product)
+
 
 def resolve_path(path):
     """
@@ -63,8 +93,20 @@ def resolve_path(path):
     # examples provide the correct *syntax*, but you should
     # determine the actual values of func and args using the
     # path.
-    func = add
-    args = ['25', '32']
+
+    # given that path is something like:
+    # '/add/3/4'
+    # '/divide/10/5'
+
+    # func = add
+    # args = ['25', '32']
+
+    path = path.strip('/').split('/') # now it looks like ["add", "3", "4"]
+    func_name = path.pop(0)           # "add" and ["3", "4"]
+
+    args = [int(arg) for arg in path] # arg is now [3, 4]
+    func = {'add': add, 'divide': divide, 'multiply': multiply, 'subtract': subtract}[func_name]
+
 
     return func, args
 
@@ -76,9 +118,29 @@ def application(environ, start_response):
     #
     # TODO (bonus): Add error handling for a user attempting
     # to divide by zero.
-    pass
+    headers = [("Content-type", "text/html")]
+    try:
+        path = environ.get('PATH_INFO', None)
+        if path is None:
+            raise NameError
+        func, args = resolve_path(path)
+        body = func(*args)
+        status = "200 OK"
+    except NameError:
+        status = "404 Not Found"
+        body = "<h1>Not Found</h1>"
+    except Exception:
+        status = "500 Internal Server Error"
+        body = "<h1>Internal Server Error</h1>"
+        print(traceback.format_exc())
+    finally:
+        headers.append(('Content-length', str(len(body))))
+        start_response(status, headers)
+        return [body.encode('utf8')]
 
 if __name__ == '__main__':
     # TODO: Insert the same boilerplate wsgiref simple
     # server creation that you used in the book database.
-    pass
+    from wsgiref.simple_server import make_server
+    srv = make_server('localhost', 8080, application)
+    srv.serve_forever()
